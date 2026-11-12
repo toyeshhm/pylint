@@ -34,3 +34,22 @@ def test_run_pylint_with_invalid_argument_in_config(
     captured = capsys.readouterr()
     assert captured.err.startswith("usage: pylint [options]")
     assert ex.value.code == 32
+
+
+def test_run_pylint_with_unrecognized_option_in_config(
+    capsys: CaptureFixture[str], tmp_path: Path
+) -> None:
+    """Check that an unrecognized option in a config file exits the same way
+    as an unrecognized option on the command line.
+    """
+    test_file = tmp_path / "testpylintrc"
+    test_file.write_text("[MAIN]\nunknown-option=yes\n", encoding="utf-8")
+    empty_module = tmp_path / "empty.py"
+    empty_module.write_text("", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as ex:
+        run_pylint(["--rcfile", f"{test_file}", f"{empty_module}"])
+    captured = capsys.readouterr()
+    assert captured.err.startswith("usage: pylint [options]")
+    assert f"Unrecognized option found in {test_file}: unknown-option" in captured.err
+    assert ex.value.code == 32

@@ -1,0 +1,5 @@
+Unrecognized options in a configuration file now make pylint exit with code ``32``,
+like unrecognized options on the command line, instead of emitting
+``unrecognized-option`` and exiting with ``0`` when the score was above ``fail-under``.
+
+Closes #7170

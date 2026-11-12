@@ -61,12 +61,17 @@ def _config_initialization(  # pylint: disable=too-many-statements
     if "load-plugins" in config_data:
         linter.load_plugin_modules(utils._splitstrip(config_data["load-plugins"]))
 
-    unrecognized_options_message = None
     # First we parse any options from a configuration file
     try:
         linter._parse_configuration_file(config_args)
     except _UnrecognizedOptionError as exc:
-        unrecognized_options_message = ", ".join(exc.options)
+        msg = ", ".join(exc.options)
+        try:
+            linter._arg_parser.error(
+                f"Unrecognized option found in {config_file}: {msg}"
+            )
+        except SystemExit:
+            sys.exit(32)
 
     # Run removes --load-plugins / --enable-all-extensions from the arguments after
     # loading them, so record them here or the generated config will leave them out.
@@ -117,14 +122,6 @@ def _config_initialization(  # pylint: disable=too-many-statements
             linter._arg_parser.error(f"Unrecognized option found: {msg}")
         except SystemExit:
             sys.exit(32)
-
-    # Now that config file and command line options have been loaded
-    # with all disables, it is safe to emit messages
-    if unrecognized_options_message is not None:
-        linter.set_current_module(str(config_file) if config_file else "")
-        linter.add_message(
-            "unrecognized-option", args=unrecognized_options_message, line=0
-        )
 
     # TODO: Change this to be checked only when upgrading the configuration
     for exc_name in linter.config.overgeneral_exceptions:
